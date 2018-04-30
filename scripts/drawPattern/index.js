@@ -6,12 +6,8 @@ const drawPattern = regl({
     frag: glsl`
         precision mediump float;
 
-        uniform sampler2D velocityTexture;
-        uniform sampler2D fboTexture;
-
         uniform sampler2D texture;
         uniform float time;
-        uniform float frameCount;
 
         varying vec2 uv;
 

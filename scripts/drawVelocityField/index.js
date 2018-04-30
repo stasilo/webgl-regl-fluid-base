@@ -5,15 +5,18 @@ const drawVelocityField = args => regl({
     framebuffer: args.output,
     frag: glsl`
         precision mediump float;
-        uniform float time;
+        // uniform float time;
+
         varying vec2 uv;
+
+        #define SCALE 2. // bigger scale => smaller swirls in bigger no.
 
         #pragma glslify: map = require('glsl-map');
 
         void main () {
             gl_FragColor = vec4(
-                map(sin(2.0 * ${Math.PI} * uv.y), -1., 1., 0., 1.),
-                map(sin(2.0 * ${Math.PI} * uv.x), -1., 1., 0., 1.),
+                map(sin(2.0 * ${Math.PI} * uv.y * SCALE), -1., 1., 0., 1.),
+                map(sin(2.0 * ${Math.PI} * uv.x * SCALE), -1., 1., 0., 1.),
                 0.0,
                 1.0
             );
@@ -26,8 +29,8 @@ const drawVelocityField = args => regl({
         varying vec2 uv;
 
         void main () {
-            uv = 1.0 - 2.0 * position;
-            gl_Position = vec4(uv, 0, 1);
+            uv = position;
+            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);
         }
     `,
     attributes: {
@@ -38,7 +41,7 @@ const drawVelocityField = args => regl({
         ]
     },
     uniforms: {
-        time: ({tick}) => 0.01 * tick,
+        // time: ({tick}) => 0.01 * tick
     },
     count: 3
 })();

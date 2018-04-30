@@ -38,6 +38,8 @@
     "gulp-sourcemaps": "^2.6.1",
     "gulp-uglify": "^3.0.0",
     "lodash.chunk": "^4.2.0",
+    "mouse-change": "^1.4.0",
+    "mouse-position": "^2.0.1",
     "query-string": "^5.0.0",
     "regl": "^1.3.1",
     "stringify": "^5.1.0",

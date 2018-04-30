@@ -1,6 +1,12 @@
 const regl = require('../reglInstance')();
 const glsl = require('glslify');
 
+// we assume every time step will be a 120th of a second.
+// the animation loop runs at 60 fps (hopefully), so we're simulating 2x
+// slow-mo.
+
+const deltaT = 1/120;
+
 // given an velocity vector field texture and a time delta, advect the
 // quantities in the input texture into the output texture
 
@@ -12,8 +18,9 @@ const advectTextureByField = regl({
         uniform sampler2D velocityTexture;
         uniform sampler2D inputTexture;
 
-        uniform sampler2D texture;
-        uniform float time;
+        // uniform sampler2D texture;
+        // uniform float time;
+        uniform float deltaT;
 
         varying vec2 uv;
 
@@ -26,7 +33,7 @@ const advectTextureByField = regl({
                 vec2(-1.), vec2(1.)
             );
 
-            vec2 pastCoord = fract(uv - (time * q));
+            vec2 pastCoord = fract(uv - (0.5 * deltaT * q));
             gl_FragColor = texture2D(inputTexture, pastCoord);
         }
     `,
@@ -52,7 +59,8 @@ const advectTextureByField = regl({
     uniforms: {
         velocityTexture: regl.prop('velocityField'),
         inputTexture: regl.prop('input'),
-        time: ({tick}) => 0.00001 * tick,
+        // time: ({tick}) => 0.00001 * tick,
+        deltaT: deltaT
     },
     count: 3,
 });
