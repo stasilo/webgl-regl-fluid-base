@@ -1,4 +1,4 @@
-Copyright 2017 Jakob Stasilowicz <kontakt@stasilo.se>
+Copyright 2018 Jakob Stasilowicz <kontakt@stasilo.se>
 
 The MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

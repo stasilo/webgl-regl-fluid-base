@@ -2,7 +2,7 @@ const regl = require('../reglInstance')();
 const glsl = require('glslify');
 
 const canvas = document.getElementsByTagName('canvas')[0];
-const mouse = require('mouse-position')();
+const mouse = require('mouse-position')(canvas);
 
 const disturbFieldWithMouse = args => regl({
     framebuffer: args.output,
@@ -20,13 +20,14 @@ const disturbFieldWithMouse = args => regl({
         #define SPLAT_INTENSITY 20.
 
         void main () {
+            vec2 mouseDir = mouse.zw;
             float dist = length(gl_FragCoord.xy - mouse.xy);
-            float radius = 0.25;
+            float radius = 0.75;
+
             float blobIntensity = exp(-(0.01 * dist) / radius);
+            vec2 blob = clamp(blobIntensity * mouseDir, -1.0, 1.0);
 
-            vec2 blob = clamp(blobIntensity * mouse.zw, -1.0, 1.0);
             gl_FragColor = texture2D(velocityTexture, uv) + vec4(blob * SPLAT_INTENSITY, 0., 1.);
-
         }
     `,
 
@@ -48,16 +49,22 @@ const disturbFieldWithMouse = args => regl({
         ]
     },
     uniforms: {
-        resolution: [canvas.width, canvas.height],
         velocityTexture: args.velocityField,
+        resolution: context => [context.viewportWidth, context.viewportHeight],
         time: ({tick}) => 0.01 * tick,
-        mouse: () => {
-            const dX = (mouse.prev[0] - mouse[0])/canvas.width;
-            const dY = (mouse.prev[1] - mouse[1])/canvas.height;
+        mouse: ({pixelRatio, viewportHeight, viewportWidth}) => {
+
+            const dX = (mouse.prev[0] - mouse[0])/viewportWidth;
+            const dY = (mouse.prev[1] - mouse[1])/viewportHeight;
+
+            const mouseX = mouse[0]*pixelRatio;
+            const mouseY = viewportHeight - mouse[1]*pixelRatio;
+
+            mouse.flush();
 
             return [
-                mouse[0],
-                canvas.height - mouse[1],
+                mouseX,
+                mouseY,
                 dX * -1,
                 dY
             ];

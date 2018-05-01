@@ -20092,17 +20092,18 @@ var deltaT = 1 / 120;
 
 var advectTextureByField = regl({
     framebuffer: regl.prop('output'),
-    frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n\n        uniform sampler2D velocityTexture;\n        uniform sampler2D inputTexture;\n\n        // uniform sampler2D texture;\n        // uniform float time;\n        uniform float deltaT;\n\n        varying vec2 uv;\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        void main () {\n            vec2 q = map(\n                texture2D(velocityTexture, uv).xy,\n                vec2(0.), vec2(1.),\n                vec2(-1.), vec2(1.)\n            );\n\n            vec2 pastCoord = fract(uv - (0.5 * deltaT * q));\n            gl_FragColor = texture2D(inputTexture, pastCoord);\n        }\n    ", ""]),
+    frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n\n        uniform sampler2D velocityTexture;\n        uniform sampler2D inputTexture;\n\n        uniform vec2 resolution;\n        uniform float deltaT;\n\n        varying vec2 uv;\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        void main () {\n            vec2 q = map(\n                texture2D(velocityTexture, uv).xy,\n                vec2(0.), vec2(1.),\n                vec2(-1.), vec2(1.)\n            );\n\n            vec2 pastCoord = fract(uv - (0.5 * deltaT * q));\n            gl_FragColor = texture2D(inputTexture, pastCoord);\n        }\n    ", ""]),
 
-    vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = 1.0 - 1.0 * position; //position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
-
+    vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = 1.0 - 1.0 * position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
     attributes: {
         position: [-2, 0, 0, -2, 2, 2]
     },
     uniforms: {
+        resolution: function resolution(context) {
+            return [context.viewportWidth, context.viewportHeight];
+        },
         velocityTexture: regl.prop('velocityField'),
         inputTexture: regl.prop('input'),
-        // time: ({tick}) => 0.00001 * tick,
         deltaT: deltaT
     },
     count: 3
@@ -20149,9 +20150,20 @@ var velocityTexture = regl.texture();
 var colorFieldFbo0 = regl.framebuffer(fboSettings);
 var colorFieldFbo1 = regl.framebuffer(fboSettings);
 
+var showArrows = false;
+
+document.addEventListener('keydown', function (e) {
+    var key = String.fromCharCode(e.keyCode);
+    if (key === 'A') {
+        showArrows = !showArrows;
+    }
+});
+
 regl.clear({
     color: [0, 0, 0, 1]
 });
+
+console.dir(regl);
 
 // advects the color field through the velocity field
 var advectColors = function advectColors() {
@@ -20188,13 +20200,19 @@ var advectColors = function advectColors() {
 // and also advects the velocity field through itself
 
 var advectColorsAndField = function advectColorsAndField() {
+    drawPattern({ output: colorFieldFbo0 });
     // drawTexture({
     //     texture: regl.texture(require('baboon-image')),
     //     output: colorFieldFbo0
     // });
 
-    drawPattern({ output: colorFieldFbo0 });
-    drawVelocityField({ output: velocityFbo0 });
+    drawVelocityField({
+        output: velocityFbo0,
+        field: { // empty field, see drawVelocityField() for other field examples
+            vX: '0.0',
+            vY: '0.0'
+        }
+    });
 
     regl.frame(function () {
         copyFrameBufferToTexture({ fbo: velocityFbo0 }, velocityTexture);
@@ -20214,13 +20232,16 @@ var advectColorsAndField = function advectColorsAndField() {
             input: colorFieldFbo0,
             output: colorFieldFbo1
         });
+
         var _ref2 = [colorFieldFbo1, colorFieldFbo0];
         colorFieldFbo0 = _ref2[0];
         colorFieldFbo1 = _ref2[1];
 
 
-        drawTextureToScreen({ texture: colorFieldFbo1 });
-        drawFieldArrows({ fieldTexture: velocityFbo0 });
+        drawTextureToScreen({ texture: colorFieldFbo1 }, true);
+        if (showArrows) {
+            drawFieldArrows({ fieldTexture: velocityFbo0 });
+        }
     });
 };
 
@@ -20234,29 +20255,41 @@ var regl = require('../reglInstance')();
 var glsl = require('glslify');
 
 var canvas = document.getElementsByTagName('canvas')[0];
-var _mouse = require('mouse-position')();
+var _mouse = require('mouse-position')(canvas);
 
 var disturbFieldWithMouse = function disturbFieldWithMouse(args) {
     return regl({
         framebuffer: args.output,
-        frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        uniform float time;\n        uniform sampler2D velocityTexture;\n        uniform vec4 mouse;\n        uniform vec2 resolution;\n\n        varying vec2 uv;\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        #define SPLAT_INTENSITY 20.\n\n        void main () {\n            float dist = length(gl_FragCoord.xy - mouse.xy);\n            float radius = 0.25;\n            float blobIntensity = exp(-(0.01 * dist) / radius);\n\n            vec2 blob = clamp(blobIntensity * mouse.zw, -1.0, 1.0);\n            gl_FragColor = texture2D(velocityTexture, uv) + vec4(blob * SPLAT_INTENSITY, 0., 1.);\n\n        }\n    ", ""]),
+        frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        uniform float time;\n        uniform sampler2D velocityTexture;\n        uniform vec4 mouse;\n        uniform vec2 resolution;\n\n        varying vec2 uv;\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        #define SPLAT_INTENSITY 20.\n\n        void main () {\n            vec2 mouseDir = mouse.zw;\n            float dist = length(gl_FragCoord.xy - mouse.xy);\n            float radius = 0.75;\n\n            float blobIntensity = exp(-(0.01 * dist) / radius);\n            vec2 blob = clamp(blobIntensity * mouseDir, -1.0, 1.0);\n\n            gl_FragColor = texture2D(velocityTexture, uv) + vec4(blob * SPLAT_INTENSITY, 0., 1.);\n        }\n    ", ""]),
 
         vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = 1.0 - 1.0 * position; //position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
         attributes: {
             position: [-2, 0, 0, -2, 2, 2]
         },
         uniforms: {
-            resolution: [canvas.width, canvas.height],
             velocityTexture: args.velocityField,
+            resolution: function resolution(context) {
+                return [context.viewportWidth, context.viewportHeight];
+            },
             time: function time(_ref) {
                 var tick = _ref.tick;
                 return 0.01 * tick;
             },
-            mouse: function mouse() {
-                var dX = (_mouse.prev[0] - _mouse[0]) / canvas.width;
-                var dY = (_mouse.prev[1] - _mouse[1]) / canvas.height;
+            mouse: function mouse(_ref2) {
+                var pixelRatio = _ref2.pixelRatio,
+                    viewportHeight = _ref2.viewportHeight,
+                    viewportWidth = _ref2.viewportWidth;
 
-                return [_mouse[0], canvas.height - _mouse[1], dX * -1, dY];
+
+                var dX = (_mouse.prev[0] - _mouse[0]) / viewportWidth;
+                var dY = (_mouse.prev[1] - _mouse[1]) / viewportHeight;
+
+                var mouseX = _mouse[0] * pixelRatio;
+                var mouseY = viewportHeight - _mouse[1] * pixelRatio;
+
+                _mouse.flush();
+
+                return [mouseX, mouseY, dX * -1, dY];
             }
         },
         count: 3
@@ -20322,7 +20355,7 @@ var glsl = require('glslify');
 
 var drawPattern = regl({
     framebuffer: regl.prop('output'),
-    frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n\n        uniform sampler2D texture;\n        uniform float time;\n\n        varying vec2 uv;\n\n        // from book of shaders\n        float circle(in vec2 uv, in float radius){\n            uv *= 7.0; // scale up the space\n            uv = fract(uv); // wrap around 1.0\n\n            vec2 l = uv - vec2(0.5);\n            return 1. - smoothstep(radius - (radius * 0.01), radius + (radius * 0.01), dot(l, l) * 4.);\n        }\n\n        void main () {\n            gl_FragColor = vec4(vec3(circle(uv, 0.25)), 1.0);\n        }\n    ", ""]),
+    frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n\n        uniform vec2 resolution;\n        uniform vec3 color;\n        varying vec2 uv;\n\n        // from book of shaders\n        float circle(in vec2 uv, in float radius) {\n            uv.y *= resolution.y / resolution.x; // fix aspect ratio\n            uv *= 7.0; // scale the space\n            uv = fract(uv); // wrap around 1.0\n\n            vec2 l = uv - vec2(0.5);\n            return 1. - smoothstep(radius - (radius * 0.01), radius + (radius * 0.01), dot(l, l) * 4.);\n        }\n\n        void main () {\n            // black bg\n            // gl_FragColor = vec4(color * circle(uv, 0.25), 1.0);\n\n            // trans bg\n            gl_FragColor = circle(uv, 0.25) * vec4(color, 1.0);\n        }\n    ", ""]),
 
     vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
 
@@ -20330,10 +20363,12 @@ var drawPattern = regl({
         position: [-2, 0, 0, -2, 2, 2]
     },
     uniforms: {
-        time: function time(_ref) {
-            var tick = _ref.tick;
-            return 0.00005 * tick;
-        } //0.001 * tick,
+        resolution: function resolution(context) {
+            return [context.viewportWidth, context.viewportHeight];
+        },
+        color: [211, 69, 69].map(function (rgb) {
+            return rgb / 255;
+        })
     },
     count: 3
 });
@@ -20346,30 +20381,32 @@ module.exports = drawPattern;
 var regl = require('../reglInstance')();
 var glsl = require('glslify');
 
-var canvas = document.getElementsByTagName('canvas')[0];
-
 var drawTexture = function drawTexture(args) {
     var antialias = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var grain = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
     return regl({
         framebuffer: regl.prop('output'),
-        frag: antialias ? glsl(["\n            precision mediump float;\n#define GLSLIFY 1\n\n\n            /**\nBasic FXAA implementation based on the code on geeks3d.com with the\nmodification that the texture2DLod stuff was removed since it's\nunsupported by WebGL.\n\n--\n\nFrom:\nhttps://github.com/mitsuhiko/webgl-meincraft\n\nCopyright (c) 2011 by Armin Ronacher.\n\nSome rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n\n    * Redistributions in binary form must reproduce the above\n      copyright notice, this list of conditions and the following\n      disclaimer in the documentation and/or other materials provided\n      with the distribution.\n\n    * The names of the contributors may not be used to endorse or\n      promote products derived from this software without specific\n      prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n*/\n\n#ifndef FXAA_REDUCE_MIN\n    #define FXAA_REDUCE_MIN   (1.0/ 128.0)\n#endif\n#ifndef FXAA_REDUCE_MUL\n    #define FXAA_REDUCE_MUL   (1.0 / 8.0)\n#endif\n#ifndef FXAA_SPAN_MAX\n    #define FXAA_SPAN_MAX     8.0\n#endif\n\n//optimized version for mobile, where dependent \n//texture reads can be a bottleneck\nvec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,\n            vec2 v_rgbNW, vec2 v_rgbNE, \n            vec2 v_rgbSW, vec2 v_rgbSE, \n            vec2 v_rgbM) {\n    vec4 color;\n    mediump vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);\n    vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;\n    vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;\n    vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;\n    vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;\n    vec4 texColor = texture2D(tex, v_rgbM);\n    vec3 rgbM  = texColor.xyz;\n    vec3 luma = vec3(0.299, 0.587, 0.114);\n    float lumaNW = dot(rgbNW, luma);\n    float lumaNE = dot(rgbNE, luma);\n    float lumaSW = dot(rgbSW, luma);\n    float lumaSE = dot(rgbSE, luma);\n    float lumaM  = dot(rgbM,  luma);\n    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));\n    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));\n    \n    mediump vec2 dir;\n    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));\n    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));\n    \n    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *\n                          (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);\n    \n    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);\n    dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),\n              max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),\n              dir * rcpDirMin)) * inverseVP;\n    \n    vec3 rgbA = 0.5 * (\n        texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +\n        texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);\n    vec3 rgbB = rgbA * 0.5 + 0.25 * (\n        texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +\n        texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);\n\n    float lumaB = dot(rgbB, luma);\n    if ((lumaB < lumaMin) || (lumaB > lumaMax))\n        color = vec4(rgbA, texColor.a);\n    else\n        color = vec4(rgbB, texColor.a);\n    return color;\n}\n\n//To save 9 dependent texture reads, you can compute\n//these in the vertex shader and use the optimized\n//frag.glsl function in your frag shader. \n\n//This is best suited for mobile devices, like iOS.\n\nvoid texcoords(vec2 fragCoord, vec2 resolution,\n\t\t\tout vec2 v_rgbNW, out vec2 v_rgbNE,\n\t\t\tout vec2 v_rgbSW, out vec2 v_rgbSE,\n\t\t\tout vec2 v_rgbM) {\n\tvec2 inverseVP = 1.0 / resolution.xy;\n\tv_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;\n\tv_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;\n\tv_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;\n\tv_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;\n\tv_rgbM = vec2(fragCoord * inverseVP);\n}\n\nvec4 apply(sampler2D tex, vec2 fragCoord, vec2 resolution) {\n\tmediump vec2 v_rgbNW;\n\tmediump vec2 v_rgbNE;\n\tmediump vec2 v_rgbSW;\n\tmediump vec2 v_rgbSE;\n\tmediump vec2 v_rgbM;\n\n\t//compute the texture coords\n\ttexcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);\n\t\n\t//compute FXAA\n\treturn fxaa(tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);\n}\n\n            uniform sampler2D texture;\n            uniform vec2 resolution;\n\n            void main () {\n                gl_FragColor = apply(texture, gl_FragCoord.xy, resolution);\n            }\n        ", ""]) : glsl(["\n            precision mediump float;\n#define GLSLIFY 1\n\n\n            uniform sampler2D texture;\n            varying vec2 uv;\n\n            void main () {\n                gl_FragColor = texture2D(texture, uv);\n            }\n        ", ""]),
-
+        frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n\n        uniform sampler2D texture;\n        uniform vec2 resolution;\n\n        uniform bool antialias;\n        uniform bool grain;\n\n        varying vec2 uv;\n\n        /**\nBasic FXAA implementation based on the code on geeks3d.com with the\nmodification that the texture2DLod stuff was removed since it's\nunsupported by WebGL.\n\n--\n\nFrom:\nhttps://github.com/mitsuhiko/webgl-meincraft\n\nCopyright (c) 2011 by Armin Ronacher.\n\nSome rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n\n    * Redistributions in binary form must reproduce the above\n      copyright notice, this list of conditions and the following\n      disclaimer in the documentation and/or other materials provided\n      with the distribution.\n\n    * The names of the contributors may not be used to endorse or\n      promote products derived from this software without specific\n      prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n*/\n\n#ifndef FXAA_REDUCE_MIN\n    #define FXAA_REDUCE_MIN   (1.0/ 128.0)\n#endif\n#ifndef FXAA_REDUCE_MUL\n    #define FXAA_REDUCE_MUL   (1.0 / 8.0)\n#endif\n#ifndef FXAA_SPAN_MAX\n    #define FXAA_SPAN_MAX     8.0\n#endif\n\n//optimized version for mobile, where dependent \n//texture reads can be a bottleneck\nvec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,\n            vec2 v_rgbNW, vec2 v_rgbNE, \n            vec2 v_rgbSW, vec2 v_rgbSE, \n            vec2 v_rgbM) {\n    vec4 color;\n    mediump vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);\n    vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;\n    vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;\n    vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;\n    vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;\n    vec4 texColor = texture2D(tex, v_rgbM);\n    vec3 rgbM  = texColor.xyz;\n    vec3 luma = vec3(0.299, 0.587, 0.114);\n    float lumaNW = dot(rgbNW, luma);\n    float lumaNE = dot(rgbNE, luma);\n    float lumaSW = dot(rgbSW, luma);\n    float lumaSE = dot(rgbSE, luma);\n    float lumaM  = dot(rgbM,  luma);\n    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));\n    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));\n    \n    mediump vec2 dir;\n    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));\n    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));\n    \n    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *\n                          (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);\n    \n    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);\n    dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),\n              max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),\n              dir * rcpDirMin)) * inverseVP;\n    \n    vec3 rgbA = 0.5 * (\n        texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +\n        texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);\n    vec3 rgbB = rgbA * 0.5 + 0.25 * (\n        texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +\n        texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);\n\n    float lumaB = dot(rgbB, luma);\n    if ((lumaB < lumaMin) || (lumaB > lumaMax))\n        color = vec4(rgbA, texColor.a);\n    else\n        color = vec4(rgbB, texColor.a);\n    return color;\n}\n\n//To save 9 dependent texture reads, you can compute\n//these in the vertex shader and use the optimized\n//frag.glsl function in your frag shader. \n\n//This is best suited for mobile devices, like iOS.\n\nvoid texcoords(vec2 fragCoord, vec2 resolution,\n\t\t\tout vec2 v_rgbNW, out vec2 v_rgbNE,\n\t\t\tout vec2 v_rgbSW, out vec2 v_rgbSE,\n\t\t\tout vec2 v_rgbM) {\n\tvec2 inverseVP = 1.0 / resolution.xy;\n\tv_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;\n\tv_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;\n\tv_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;\n\tv_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;\n\tv_rgbM = vec2(fragCoord * inverseVP);\n}\n\nvec4 apply(sampler2D tex, vec2 fragCoord, vec2 resolution) {\n\tmediump vec2 v_rgbNW;\n\tmediump vec2 v_rgbNE;\n\tmediump vec2 v_rgbSW;\n\tmediump vec2 v_rgbSE;\n\tmediump vec2 v_rgbM;\n\n\t//compute the texture coords\n\ttexcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);\n\t\n\t//compute FXAA\n\treturn fxaa(tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);\n}\n\n        float rand(vec2 co) {\n            return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);\n        }\n\n        vec3 saturate(vec3 a) {\n            return clamp(a, 0., 1.);\n        }\n\n        void main () {\n            vec4 col = antialias == true\n                ? apply(texture, gl_FragCoord.xy, resolution)\n                : texture2D(texture, uv);\n\n            if(grain) {\n                col.rgb += (rand(uv) - 0.5) * 0.07;\n                col.rgb = saturate(col.rgb);\n            }\n\n            gl_FragColor = col;\n        }\n    ", ""]),
         vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
-
         attributes: {
             position: [-2, 0, 0, -2, 2, 2]
         },
         uniforms: {
+            resolution: function resolution(context) {
+                return [context.viewportWidth, context.viewportHeight];
+            },
             texture: regl.prop('texture'),
-            resolution: [canvas.width, canvas.height]
+            antialias: antialias,
+            grain: grain
         },
         count: 3
     })(args);
 };
 
 var drawTextureToScreen = function drawTextureToScreen(args) {
-    var antialias = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-    return drawTexture({ output: null, texture: args.texture }, antialias);
+    var antialias = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var grain = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+    return drawTexture({ output: null, texture: args.texture }, antialias, grain);
 };
 
 module.exports = { drawTexture: drawTexture, drawTextureToScreen: drawTextureToScreen };
@@ -20380,10 +20417,17 @@ module.exports = { drawTexture: drawTexture, drawTextureToScreen: drawTextureToS
 var regl = require('../reglInstance')();
 var glsl = require('glslify');
 
+var defined = require('../utils').defined;
+
+var defaultField = {
+    vX: 'sin(2.0 * ' + Math.PI + ' * uv.y * SCALE)',
+    vY: 'sin(2.0 * ' + Math.PI + ' * uv.x * SCALE)'
+};
+
 var drawVelocityField = function drawVelocityField(args) {
     return regl({
         framebuffer: args.output,
-        frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        // uniform float time;\n\n        varying vec2 uv;\n\n        #define SCALE 2. // bigger scale => smaller swirls in bigger no.\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        void main () {\n            gl_FragColor = vec4(\n                map(sin(2.0 * ", " * uv.y * SCALE), -1., 1., 0., 1.),\n                map(sin(2.0 * ", " * uv.x * SCALE), -1., 1., 0., 1.),\n                0.0,\n                1.0\n            );\n        }\n    ", ""], Math.PI, Math.PI),
+        frag: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        varying vec2 uv;\n\n        #define SCALE 2. // bigger scale => smaller swirls in bigger numbers\n\n        float map(float value, float inMin, float inMax, float outMin, float outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec2 map(vec2 value, vec2 inMin, vec2 inMax, vec2 outMin, vec2 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec3 map(vec3 value, vec3 inMin, vec3 inMax, vec3 outMin, vec3 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\nvec4 map(vec4 value, vec4 inMin, vec4 inMax, vec4 outMin, vec4 outMax) {\n  return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);\n}\n\n        void main () {\n            gl_FragColor = vec4(\n                map(", ", -1., 1., 0., 1.),\n                map(", ", -1., 1., 0., 1.),\n                0.0,\n                1.0\n            );\n        }\n    ", ""], defined(args.field) ? args.field.vX : defaultField.vX, defined(args.field) ? args.field.vY : defaultField.vY),
 
         vert: glsl(["\n        precision mediump float;\n#define GLSLIFY 1\n\n        attribute vec2 position;\n        varying vec2 uv;\n\n        void main () {\n            uv = position;\n            gl_Position = vec4(1.0 - 2.0 * position, 0, 1);\n        }\n    ", ""]),
         attributes: {
@@ -20398,11 +20442,11 @@ var drawVelocityField = function drawVelocityField(args) {
 
 module.exports = drawVelocityField;
 
-},{"../reglInstance":92,"glslify":60}],92:[function(require,module,exports){
+},{"../reglInstance":92,"../utils":93,"glslify":60}],92:[function(require,module,exports){
 'use strict';
 
 var canvas = document.getElementsByTagName('canvas')[0];
-var regl = require('regl')(canvas);
+var regl = require('regl')(); //(canvas);
 
 module.exports = function () {
   return regl;
@@ -20421,6 +20465,10 @@ var _toArray3 = _interopRequireDefault(_toArray2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var defined = function defined(obj) {
+    return typeof obj !== 'undefined' && obj;
+};
+
 var reverse = function reverse(_ref) {
     var _ref2 = (0, _toArray3.default)(_ref),
         x = _ref2[0],
@@ -20437,7 +20485,7 @@ var flatten = function flatten(_ref3) {
     return typeof x !== 'undefined' ? Array.isArray(x) ? [].concat((0, _toConsumableArray3.default)(flatten(x)), (0, _toConsumableArray3.default)(flatten(xs))) : [x].concat((0, _toConsumableArray3.default)(flatten(xs))) : [];
 };
 
-module.exports = { flatten: flatten, reverse: reverse };
+module.exports = { flatten: flatten, reverse: reverse, defined: defined };
 
 },{"babel-runtime/helpers/toArray":2,"babel-runtime/helpers/toConsumableArray":3}]},{},[86])
 

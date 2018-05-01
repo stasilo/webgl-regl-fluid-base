@@ -18,8 +18,7 @@ const advectTextureByField = regl({
         uniform sampler2D velocityTexture;
         uniform sampler2D inputTexture;
 
-        // uniform sampler2D texture;
-        // uniform float time;
+        uniform vec2 resolution;
         uniform float deltaT;
 
         varying vec2 uv;
@@ -44,11 +43,10 @@ const advectTextureByField = regl({
         varying vec2 uv;
 
         void main () {
-            uv = 1.0 - 1.0 * position; //position;
+            uv = 1.0 - 1.0 * position;
             gl_Position = vec4(1.0 - 2.0 * position, 0, 1);
         }
     `,
-
     attributes: {
         position: [
             -2, 0,
@@ -57,9 +55,9 @@ const advectTextureByField = regl({
         ]
     },
     uniforms: {
+        resolution: context => [context.viewportWidth, context.viewportHeight],
         velocityTexture: regl.prop('velocityField'),
         inputTexture: regl.prop('input'),
-        // time: ({tick}) => 0.00001 * tick,
         deltaT: deltaT
     },
     count: 3,

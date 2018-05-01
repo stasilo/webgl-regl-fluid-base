@@ -6,14 +6,14 @@ const drawPattern = regl({
     frag: glsl`
         precision mediump float;
 
-        uniform sampler2D texture;
-        uniform float time;
-
+        uniform vec2 resolution;
+        uniform vec3 color;
         varying vec2 uv;
 
         // from book of shaders
-        float circle(in vec2 uv, in float radius){
-            uv *= 7.0; // scale up the space
+        float circle(in vec2 uv, in float radius) {
+            uv.y *= resolution.y / resolution.x; // fix aspect ratio
+            uv *= 7.0; // scale the space
             uv = fract(uv); // wrap around 1.0
 
             vec2 l = uv - vec2(0.5);
@@ -21,7 +21,11 @@ const drawPattern = regl({
         }
 
         void main () {
-            gl_FragColor = vec4(vec3(circle(uv, 0.25)), 1.0);
+            // black bg
+            // gl_FragColor = vec4(color * circle(uv, 0.25), 1.0);
+
+            // trans bg
+            gl_FragColor = circle(uv, 0.25) * vec4(color, 1.0);
         }
     `,
 
@@ -44,7 +48,8 @@ const drawPattern = regl({
         ]
     },
     uniforms: {
-        time: ({tick}) => 0.00005 * tick, //0.001 * tick,
+        resolution: context => [context.viewportWidth, context.viewportHeight],
+        color: [211, 69, 69].map(rgb => rgb/255)
     },
     count: 3,
 });

@@ -1,22 +1,27 @@
 const regl = require('../reglInstance')();
 const glsl = require('glslify');
 
+const defined = require('../utils').defined;
+
+const defaultField = {
+    vX: `sin(2.0 * ${Math.PI} * uv.y * SCALE)`,
+    vY: `sin(2.0 * ${Math.PI} * uv.x * SCALE)`
+};
+
 const drawVelocityField = args => regl({
     framebuffer: args.output,
     frag: glsl`
         precision mediump float;
-        // uniform float time;
-
         varying vec2 uv;
 
-        #define SCALE 2. // bigger scale => smaller swirls in bigger no.
+        #define SCALE 2. // bigger scale => smaller swirls in bigger numbers
 
         #pragma glslify: map = require('glsl-map');
 
         void main () {
             gl_FragColor = vec4(
-                map(sin(2.0 * ${Math.PI} * uv.y * SCALE), -1., 1., 0., 1.),
-                map(sin(2.0 * ${Math.PI} * uv.x * SCALE), -1., 1., 0., 1.),
+                map(${defined(args.field) ? args.field.vX : defaultField.vX}, -1., 1., 0., 1.),
+                map(${defined(args.field) ? args.field.vY : defaultField.vY}, -1., 1., 0., 1.),
                 0.0,
                 1.0
             );
