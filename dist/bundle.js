@@ -20152,17 +20152,6 @@ var colorFieldFbo1 = regl.framebuffer(fboSettings);
 
 var showArrows = false;
 
-document.addEventListener('keydown', function (e) {
-    var key = String.fromCharCode(e.keyCode);
-    if (key === 'A') {
-        showArrows = !showArrows;
-    }
-});
-
-regl.clear({
-    color: [0, 0, 0, 1]
-});
-
 // advects the color field through the velocity field
 var advectColors = function advectColors() {
     drawTexture({
@@ -20238,8 +20227,24 @@ var advectColorsAndField = function advectColorsAndField() {
     });
 };
 
-// advectColorsAndField();
-advectColors();
+function app() {
+    // toggle arrow display when 'a' is pressed
+    document.addEventListener('keydown', function (e) {
+        var key = String.fromCharCode(e.keyCode);
+        if (key === 'A') {
+            showArrows = !showArrows;
+        }
+    });
+
+    regl.clear({
+        color: [0, 0, 0, 1]
+    });
+
+    advectColorsAndField();
+    // advectColors();
+}
+
+app();
 
 },{"./advectTextureByField":85,"./disturbFieldWithMouse":87,"./drawFieldArrows":88,"./drawPattern":89,"./drawTexture":90,"./drawVelocityField":91,"./reglInstance":92,"baboon-image":4,"glslify":60}],87:[function(require,module,exports){
 'use strict';

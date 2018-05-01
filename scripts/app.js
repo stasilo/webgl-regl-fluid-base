@@ -29,17 +29,6 @@ let colorFieldFbo1 = regl.framebuffer(fboSettings);
 
 let showArrows = false;
 
-document.addEventListener('keydown', e => {
-    const key = String.fromCharCode(e.keyCode);
-    if(key === 'A') {
-        showArrows = !showArrows;
-    }
-});
-
-regl.clear({
-    color: [0, 0, 0, 1]
-})
-
 // advects the color field through the velocity field
 const advectColors = () => {
     drawTexture({
@@ -109,6 +98,21 @@ const advectColorsAndField = () => {
     });
 }
 
+function app() {
+    // toggle arrow display when 'a' is pressed
+    document.addEventListener('keydown', e => {
+        const key = String.fromCharCode(e.keyCode);
+        if(key === 'A') {
+            showArrows = !showArrows;
+        }
+    });
 
-// advectColorsAndField();
-advectColors();
+    regl.clear({
+        color: [0, 0, 0, 1]
+    })
+
+    advectColorsAndField();
+    // advectColors();
+}
+
+app();
