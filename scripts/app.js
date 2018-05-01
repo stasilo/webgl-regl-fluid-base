@@ -40,8 +40,6 @@ regl.clear({
     color: [0, 0, 0, 1]
 })
 
-console.dir(regl);
-
 // advects the color field through the velocity field
 const advectColors = () => {
     drawTexture({
@@ -52,13 +50,8 @@ const advectColors = () => {
     drawVelocityField({output: velocityFbo0});
 
     regl.frame(() => {
-        disturbFieldWithMouse({
-            velocityField: velocityFbo0,
-            output: velocityFbo1
-        });
-
         advectTextureByField({
-            velocityField: velocityFbo1,
+            velocityField: velocityFbo0,
             input: colorFieldFbo0,
             output: colorFieldFbo1
         });
@@ -66,7 +59,7 @@ const advectColors = () => {
         [colorFieldFbo0, colorFieldFbo1] = [colorFieldFbo1, colorFieldFbo0];
 
         drawTextureToScreen({texture: colorFieldFbo0});
-        drawFieldArrows({fieldTexture: velocityFbo1});
+        drawFieldArrows({fieldTexture: velocityFbo0});
     });
 }
 
@@ -82,7 +75,7 @@ const advectColorsAndField = () => {
 
     drawVelocityField({
         output: velocityFbo0,
-        field: { // empty field, see drawVelocityField() for other field examples
+        field: { // empty field, see drawVelocityField() for other field definition examples
             vX: `0.0`,
             vY: `0.0`
         }
@@ -117,5 +110,5 @@ const advectColorsAndField = () => {
 }
 
 
-advectColorsAndField();
-// advectColors();
+// advectColorsAndField();
+advectColors();

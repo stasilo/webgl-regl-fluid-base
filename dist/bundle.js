@@ -20163,8 +20163,6 @@ regl.clear({
     color: [0, 0, 0, 1]
 });
 
-console.dir(regl);
-
 // advects the color field through the velocity field
 var advectColors = function advectColors() {
     drawTexture({
@@ -20175,13 +20173,8 @@ var advectColors = function advectColors() {
     drawVelocityField({ output: velocityFbo0 });
 
     regl.frame(function () {
-        disturbFieldWithMouse({
-            velocityField: velocityFbo0,
-            output: velocityFbo1
-        });
-
         advectTextureByField({
-            velocityField: velocityFbo1,
+            velocityField: velocityFbo0,
             input: colorFieldFbo0,
             output: colorFieldFbo1
         });
@@ -20192,7 +20185,7 @@ var advectColors = function advectColors() {
 
 
         drawTextureToScreen({ texture: colorFieldFbo0 });
-        drawFieldArrows({ fieldTexture: velocityFbo1 });
+        drawFieldArrows({ fieldTexture: velocityFbo0 });
     });
 };
 
@@ -20208,7 +20201,7 @@ var advectColorsAndField = function advectColorsAndField() {
 
     drawVelocityField({
         output: velocityFbo0,
-        field: { // empty field, see drawVelocityField() for other field examples
+        field: { // empty field, see drawVelocityField() for other field definition examples
             vX: '0.0',
             vY: '0.0'
         }
@@ -20245,8 +20238,8 @@ var advectColorsAndField = function advectColorsAndField() {
     });
 };
 
-advectColorsAndField();
-// advectColors();
+// advectColorsAndField();
+advectColors();
 
 },{"./advectTextureByField":85,"./disturbFieldWithMouse":87,"./drawFieldArrows":88,"./drawPattern":89,"./drawTexture":90,"./drawVelocityField":91,"./reglInstance":92,"baboon-image":4,"glslify":60}],87:[function(require,module,exports){
 'use strict';
@@ -20419,10 +20412,14 @@ var glsl = require('glslify');
 
 var defined = require('../utils').defined;
 
+// divergence free field copied from Jamie Wong - http://jamie-wong.com/2016/08/05/webgl-fluid-simulation/
 var defaultField = {
     vX: 'sin(2.0 * ' + Math.PI + ' * uv.y * SCALE)',
     vY: 'sin(2.0 * ' + Math.PI + ' * uv.x * SCALE)'
 };
+
+// output field to a framebuffer, input range of scalar functions is assumed to be [-1, 1]
+// output range is mapped to [0, 1]
 
 var drawVelocityField = function drawVelocityField(args) {
     return regl({

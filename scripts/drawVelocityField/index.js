@@ -3,10 +3,14 @@ const glsl = require('glslify');
 
 const defined = require('../utils').defined;
 
+// divergence free field copied from Jamie Wong - http://jamie-wong.com/2016/08/05/webgl-fluid-simulation/
 const defaultField = {
     vX: `sin(2.0 * ${Math.PI} * uv.y * SCALE)`,
     vY: `sin(2.0 * ${Math.PI} * uv.x * SCALE)`
 };
+
+// output field to a framebuffer, input range of scalar functions is assumed to be [-1, 1]
+// output range is mapped to [0, 1]
 
 const drawVelocityField = args => regl({
     framebuffer: args.output,
