@@ -1,7 +1,7 @@
 const regl = require('../reglInstance')();
 const glsl = require('glslify');
 
-const drawTexture = (args, antialias = false, grain = true) => regl({
+const drawTexture = (args, antialias = false, grain = false) => regl({
     framebuffer: regl.prop('output'),
     frag: glsl`
         precision mediump float;
@@ -63,6 +63,6 @@ const drawTexture = (args, antialias = false, grain = true) => regl({
     count: 3
 })(args);
 
-const drawTextureToScreen = (args, antialias = false, grain = true) => drawTexture( {output: null, texture: args.texture}, antialias, grain);
+const drawTextureToScreen = (args, antialias = false, grain = false) => drawTexture( {output: null, texture: args.texture}, antialias, grain);
 
 module.exports = {drawTexture, drawTextureToScreen};

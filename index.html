@@ -11,12 +11,32 @@
                 width: 100vw;
                 height: 100vh;
 
+                padding: 0;
+                margin: 0;
+
                 background-color: white;
+            }
+
+            #fps {
+                position: absolute;
+                z-index: 2;
+
+                top: 0;
+                left: 0;
+
+                padding: 10px;
+                margin: 10px;
+
+                background-color: rgba(0, 0, 0, 0.5);
+                color: white;
+
+                font-family: sans-serif;
             }
         </style>
     </head>
 
     <body>
+        <div id="fps">- fps</div>
         <script src="dist/bundle.js"></script>
     </body>
 </html>

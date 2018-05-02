@@ -1,3 +1,4 @@
+const fpsSampler = new (require('fps-sampler'))();
 const regl = require('./reglInstance')();
 const glsl = require('glslify');
 
@@ -9,9 +10,11 @@ const {drawTexture, drawTextureToScreen} = require('./drawTexture');
 const advectTextureByField = require('./advectTextureByField');
 const disturbFieldWithMouse = require('./disturbFieldWithMouse');
 
-const copyFrameBufferToTexture = (args, texture) => regl({framebuffer: args.fbo})(() => texture({copy: true}));
+const copyFrameBufferToTexture = (args, texture) =>
+    regl({framebuffer: args.fbo})(() => texture({copy: true}));
 
-const canvas = document.getElementsByTagName('canvas')[0];
+let canvas = document.getElementsByTagName('canvas')[0];
+let fpsContainer = document.getElementById('fps');
 
 const fboSettings = {
     width: canvas.width,
@@ -29,8 +32,21 @@ let colorFieldFbo1 = regl.framebuffer(fboSettings);
 
 let showArrows = false;
 
+const setupKeyboardEvents = () => {
+    document.addEventListener('keydown', e => {
+        const key = String.fromCharCode(e.keyCode);
+        if(key === 'A') {
+            showArrows = !showArrows;
+        }
+    });
+}
+
 // advects the color field through the velocity field
-const advectColors = () => {
+const advectColorsLoop = () => {
+    regl.clear({
+        color: [0, 0, 0, 1]
+    })
+
     drawTexture({
         texture: regl.texture(require('baboon-image')),
         output: colorFieldFbo0
@@ -48,14 +64,21 @@ const advectColors = () => {
         [colorFieldFbo0, colorFieldFbo1] = [colorFieldFbo1, colorFieldFbo0];
 
         drawTextureToScreen({texture: colorFieldFbo0});
-        drawFieldArrows({fieldTexture: velocityFbo0});
+        if(showArrows) {
+            drawFieldArrows({fieldTexture: velocityFbo0});
+        }
+
+        fpsContainer.innerHTML = `${fpsSampler.update().fps} fps`;
     });
 }
 
 // advects the color field through the velocity field
 // and also advects the velocity field through itself
+const advectColorsAndFieldLoop = () => {
+    regl.clear({
+        color: [0, 0, 0, 1]
+    })
 
-const advectColorsAndField = () => {
     drawPattern({output: colorFieldFbo0});
     // drawTexture({
     //     texture: regl.texture(require('baboon-image')),
@@ -64,7 +87,7 @@ const advectColorsAndField = () => {
 
     drawVelocityField({
         output: velocityFbo0,
-        field: { // empty field, see drawVelocityField() for other field definition examples
+        field: { // empty field, see drawVelocityField() for examples
             vX: `0.0`,
             vY: `0.0`
         }
@@ -75,7 +98,8 @@ const advectColorsAndField = () => {
         advectTextureByField({
             velocityField: velocityTexture,
             input: velocityFbo0,
-            output: velocityFbo1
+            output: velocityFbo1,
+            deltaT: 1/400
         });
 
         disturbFieldWithMouse({
@@ -95,24 +119,15 @@ const advectColorsAndField = () => {
         if(showArrows) {
             drawFieldArrows({fieldTexture: velocityFbo0});
         }
+
+        fpsContainer.innerHTML = `${fpsSampler.update().fps} fps`;
     });
 }
 
 function app() {
-    // toggle arrow display when 'a' is pressed
-    document.addEventListener('keydown', e => {
-        const key = String.fromCharCode(e.keyCode);
-        if(key === 'A') {
-            showArrows = !showArrows;
-        }
-    });
-
-    regl.clear({
-        color: [0, 0, 0, 1]
-    })
-
-    advectColorsAndField();
-    // advectColors();
+    setupKeyboardEvents();
+    advectColorsAndFieldLoop();
+    // advectColorsLoop();
 }
 
-app();
+document.addEventListener('DOMContentLoaded', app, false);

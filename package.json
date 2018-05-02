@@ -20,6 +20,7 @@
     "babelify": "^7.3.0",
     "baboon-image": "^2.1.0",
     "browserify": "^14.4.0",
+    "fps-sampler": "^1.1.0",
     "glsl-blend-overlay": "^1.0.5",
     "glsl-fxaa": "^3.0.0",
     "glsl-hsv2rgb": "^1.0.0",
