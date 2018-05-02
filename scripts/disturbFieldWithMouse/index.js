@@ -4,38 +4,34 @@ const glsl = require('glslify');
 const canvas = document.getElementsByTagName('canvas')[0];
 const mouse = require('mouse-position')(canvas);
 
-const fragge = glsl`
-    precision mediump float;
-    uniform float time;
-    uniform sampler2D velocityTexture;
-    uniform vec4 mouse;
-    uniform vec2 resolution;
-
-    varying vec2 uv;
-
-    #pragma glslify: map = require('glsl-map');
-
-    // account for safari mouse pos update freq
-    #define SPLAT_INTENSITY ${window.safari !== undefined ? '200.' : '20.'}
-
-    void main () {
-        vec2 mouseDir = mouse.zw;
-        float dist = length(gl_FragCoord.xy - mouse.xy);
-        float radius = 0.75;
-
-        float blobIntensity = exp(-(0.01 * dist) / radius);
-        vec2 blob = clamp(blobIntensity * mouseDir, -1.0, 1.0);
-
-        gl_FragColor = texture2D(velocityTexture, uv) + vec4(blob * SPLAT_INTENSITY, 0., 1.);
-    }
-`;
-
-console.log(fragge);
-
 const disturbFieldWithMouse = args => regl({
     framebuffer: args.output,
-    frag: fragge,
+    frag: glsl`
+        precision mediump float;
+        uniform float time;
+        uniform sampler2D velocityTexture;
+        uniform vec4 mouse;
+        uniform vec2 resolution;
 
+        varying vec2 uv;
+
+        #pragma glslify: map = require('glsl-map');
+
+        // bigger splat for safari looks better
+        #define SPLAT_INTENSITY ${window.safari !== undefined ? '200.' : '20.'}
+
+        void main () {
+            vec2 mouseDir = mouse.zw;
+            float dist = length(gl_FragCoord.xy - mouse.xy);
+            float radius = 0.75;
+
+            float blobIntensity = exp(-(0.01 * dist) / radius);
+            vec2 blob = clamp(blobIntensity * mouseDir, -1.0, 1.0);
+
+
+            gl_FragColor = texture2D(velocityTexture, uv) + vec4(blob * SPLAT_INTENSITY, 0., 1.);
+        }
+    `,
     vert: glsl`
         precision mediump float;
         attribute vec2 position;
