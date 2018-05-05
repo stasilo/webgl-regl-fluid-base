@@ -1,12 +1,22 @@
-## Fluid simulation base
+# Fluid simulation base
 
 This is a base for fluid simulations built using the amazing (really, try it!) declarative webgl helper api [regl](https://regl.party).
 
 **Only velocity field helpers and advection functionality is implemented**, but since I really like the look and feel of this almost-but-not-quite-a-fluid effect I will probably build upon this base when creating various **color soups** and more realistic fluid stuff :)
 
+Based heavily on Jamie Wong's article (see further resources below).
+
 ![Example](/assets/example.gif?raw=true "Example")
 
-Made by Jakob Stasilowicz - kontakt [at] stasilo.se
+By Jakob Stasilowicz - kontakt [at] stasilo.se
+
+## Building & running
+
+```sh
+$ npm install
+$ gulp webserver
+```
+
 
 ## Further resources
 

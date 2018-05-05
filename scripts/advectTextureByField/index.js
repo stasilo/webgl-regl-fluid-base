@@ -3,11 +3,8 @@ const glsl = require('glslify');
 
 const defined = require('../utils').defined;
 
-// we assume every time step will be a 120th of a second.
-// the animation loop runs at 60 fps (hopefully), so we're simulating 2x
-// slow-mo.
-
-const deltaT = 1/120;
+// advection time delta
+const deltaT = 1/100;
 
 // given an velocity vector field texture and a time delta, advect the
 // quantities in the input texture into the output texture
@@ -22,6 +19,7 @@ const advectTextureByField = args => regl({
 
         uniform vec2 resolution;
         uniform float deltaT;
+        uniform float time;
 
         varying vec2 uv;
 
@@ -45,7 +43,7 @@ const advectTextureByField = args => regl({
         varying vec2 uv;
 
         void main () {
-            uv = 1.0 - 1.0 * position;
+            uv = 1.0 - position;
             gl_Position = vec4(1.0 - 2.0 * position, 0, 1);
         }
     `,
@@ -60,7 +58,8 @@ const advectTextureByField = args => regl({
         resolution: context => [context.viewportWidth, context.viewportHeight],
         velocityTexture: regl.prop('velocityField'),
         inputTexture: regl.prop('input'),
-        deltaT: defined(args.deltaT) ? args.deltaT : deltaT
+        deltaT: defined(args.deltaT) ? args.deltaT : deltaT,
+        time: ({tick}) => 0.01 * tick
     },
     count: 3,
 })(args);

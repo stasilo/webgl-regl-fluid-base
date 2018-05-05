@@ -45,11 +45,11 @@ const drawArrows = (args) => regl({
             );
 
             float scale = 1.0 * length(v);
-            float angle = -atan(v.y, v.x);
+            float angle = -atan(v.y, v.x); // angle between vector and x-axis
 
             vec2 pos = position * scale;
 
-            // translate by offset and rotate
+            // rotate and translate by offset
             gl_Position = vec4(
                 cos(angle) * pos.x + sin(angle) * pos.y + offset.x,
                 -sin(angle) * pos.x + cos(angle) * pos.y + offset.y,
@@ -67,7 +67,7 @@ const drawArrows = (args) => regl({
     },
     uniforms: {
         color: [0, 1, 0, 1],
-        fieldTexture: () => args.fieldTexture, //velocityFbo,
+        fieldTexture: () => args.fieldTexture,
         offset: regl.prop('offset')
     },
     depth: {
@@ -76,5 +76,4 @@ const drawArrows = (args) => regl({
     count: 3
 })(triangleOffsets);
 
-// export default drawArrows;
 module.exports = drawArrows;

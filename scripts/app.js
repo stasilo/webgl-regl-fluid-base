@@ -77,15 +77,20 @@ function app() {
     // advects the color field through the velocity field
     // and also advects the velocity field through itself
     const advectColorsAndFieldLoop = () => {
+        const options = {
+            colorDeltaT: 0.0083,
+            fieldDeltaT: 0.0025
+        }
+
         regl.clear({
             color: [0, 0, 0, 1]
         })
 
-        drawPattern({output: colorFieldFbo0});
-        // drawTexture({
-        //     texture: regl.texture(require('baboon-image')),
-        //     output: colorFieldFbo0
-        // });
+        // drawPattern({output: colorFieldFbo0});
+        drawTexture({
+            texture: regl.texture(require('baboon-image')),
+            output: colorFieldFbo0
+        });
 
         drawVelocityField({
             output: velocityFbo0,
@@ -101,7 +106,7 @@ function app() {
                 velocityField: velocityTexture,
                 input: velocityFbo0,
                 output: velocityFbo1,
-                deltaT: 1/400
+                deltaT: options.fieldDeltaT
             });
 
             disturbFieldWithMouse({
@@ -112,7 +117,8 @@ function app() {
             advectTextureByField({
                 velocityField: velocityFbo0,
                 input: colorFieldFbo0,
-                output: colorFieldFbo1
+                output: colorFieldFbo1,
+                deltaT: options.colorDeltaT
             });
 
             [colorFieldFbo0, colorFieldFbo1] = [colorFieldFbo1, colorFieldFbo0];
