@@ -1,3 +1,7 @@
+
+Main application
+-
+
 Copyright 2018 Jakob Stasilowicz <kontakt@stasilo.se>
 
 The MIT License
@@ -13,3 +17,9 @@ TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONIN
 THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+
+Image of Mosaic in Mosquee de Paris
+-
+
+Copyright MarcCooperUK, licensed under https://creativecommons.org/licenses/by/2.0/deed.en

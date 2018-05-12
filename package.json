@@ -38,6 +38,7 @@
     "gulp-server-livereload": "^1.9.2",
     "gulp-sourcemaps": "^2.6.1",
     "gulp-uglify": "^3.0.0",
+    "in-viewport": "^3.6.0",
     "lodash.chunk": "^4.2.0",
     "mouse-change": "^1.4.0",
     "mouse-position": "^2.0.1",

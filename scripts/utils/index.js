@@ -1,4 +1,4 @@
-const defined = obj => typeof obj !== 'undefined' && obj;
+const defined = obj => typeof obj !== 'undefined';
 
 const reverse = ([x, ...xs]) => typeof x !== 'undefined'
     ? [...reverse(xs), x]

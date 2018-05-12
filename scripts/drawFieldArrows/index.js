@@ -1,7 +1,5 @@
-const regl = require('../reglInstance')();
 const glsl = require('glslify');
-
-const flatten = require('../utils').flatten;
+const {defined, flatten} = require('../utils');
 
 // triangle coord offsets for a 19x19 grid of triangles covering the canvas
 let triangleOffsets = flatten(
@@ -13,67 +11,71 @@ let triangleOffsets = flatten(
     )
 );
 
-// draw a field of arrows to track velocity field activity
-const drawArrows = (args) => regl({
-    frag: glsl`
-        precision mediump float;
-        uniform vec4 color;
+module.exports = regl => {
+	// draw a field of arrows to track velocity field activity
+	const drawArrows = (args) => regl({
+	    frag: glsl`
+	        precision mediump float;
+	        uniform vec4 color;
 
-        void main() {
-            gl_FragColor = color;
-        }
-    `,
-    vert: glsl`
-        precision mediump float;
+	        void main() {
+	            gl_FragColor = color;
+	        }
+	    `,
+	    vert: glsl`
+	        precision mediump float;
 
-        attribute vec2 position;
-        uniform sampler2D fieldTexture;
-        uniform vec2 offset;
+	        attribute vec2 position;
+	        uniform sampler2D fieldTexture;
+	        uniform vec2 offset;
 
-        #pragma glslify: map = require('glsl-map');
+	        #pragma glslify: map = require('glsl-map');
 
-        void main() {
-            vec2 uv = map(position + offset,
-                vec2(-1.), vec2(1.),
-                vec2(0.), vec2(1.)
-            );
+	        void main() {
+	            vec2 uv = 1. - map(position + offset,
+	                vec2(-1.), vec2(1.),
+	                vec2(0.), vec2(1.)
+	            );
 
-            vec2 v = map(
-                texture2D(fieldTexture, uv).xy,
-                vec2(0.), vec2(1.),
-                vec2(-1.), vec2(1.)
-            );
+				vec2 v = map(
+	                texture2D(fieldTexture, uv).xy,
+	                vec2(0.), vec2(1.),
+	                vec2(-1.), vec2(1.)
+	            );
 
-            float scale = 1.0 * length(v);
-            float angle = -atan(v.y, v.x); // angle between vector and x-axis
+	            float scale = 1.0 * length(v);
+	            float angle = -atan(v.y, v.x); // angle between vector and x-axis
 
-            vec2 pos = position * scale;
+	            vec2 pos = position * scale;
 
-            // rotate and translate by offset
-            gl_Position = vec4(
-                cos(angle) * pos.x + sin(angle) * pos.y + offset.x,
-                -sin(angle) * pos.x + cos(angle) * pos.y + offset.y,
-                0,
-                1
-            );
-        }
-    `,
-    attributes: {
-        position: [ // centered triangle vertices
-            0, 0.2,
-            1, 0,
-            0, -0.2
-        ].map(p => p * 0.05) // scale down
-    },
-    uniforms: {
-        color: [0, 1, 0, 1],
-        fieldTexture: () => args.fieldTexture,
-        offset: regl.prop('offset')
-    },
-    depth: {
-        enable: false
-    },
-    count: 3
-})(triangleOffsets);
+	            // rotate and translate by offset
+	            gl_Position = vec4(
+	                cos(angle) * pos.x + sin(angle) * pos.y + offset.x,
+	                -sin(angle) * pos.x + cos(angle) * pos.y + offset.y,
+	                0,
+	                1
+	            );
+	        }
+	    `,
+	    attributes: {
+	        position: [ // centered triangle vertices
+	            0, 0.2,
+	            1, 0,
+	            0, -0.2
+	        ].map(p => p * 0.05) // scale down
+	    },
+	    uniforms: {
+			fieldTexture: () => args.fieldTexture,
+			offset: regl.prop('offset'),
+	        color: defined(args.arrowColor)
+				? [...args.arrowColor.map(rgb => rgb === 0 ? 0 : rgb/255), 1.0]
+				: [0, 1, 0, 1]
+	    },
+	    depth: {
+	        enable: false
+	    },
+	    count: 3
+	})(triangleOffsets);
 
-module.exports = drawArrows;
+	return drawArrows;
+}

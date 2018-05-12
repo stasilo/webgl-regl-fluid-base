@@ -7,6 +7,7 @@ This is a base for fluid simulations built using the amazing (really, try it!) d
 Based heavily on Jamie Wong's article (see further resources below).
 
 ![Example](/assets/example.gif?raw=true "Example")
+![Example2](/assets/example2.gif?raw=true "Example2")
 
 By Jakob Stasilowicz - kontakt [at] stasilo.se
 
