@@ -9,10 +9,10 @@ const glsl = require('glslify');
 const fpsSampler = new (require('fps-sampler'))();
 const inViewport = require('in-viewport');
 
-const drawPattern = require('./drawPattern')(regl);
 const drawFieldArrows = require('./drawFieldArrows')(regl);
 const drawVelocityField = require('./drawVelocityField')(regl);
 const {drawTexture, drawTextureToScreen} = require('./drawTexture')(regl);
+const drawPattern = require('./drawPattern')(regl);
 
 const advectTextureByField = require('./advectTextureByField')(regl);
 const disturbFieldWithMouse = require('./disturbFieldWithMouse')(regl);
