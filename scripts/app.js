@@ -144,14 +144,14 @@ const advectColorsAndFieldLoop = () => {
 }
 
 function app() {
-image = new Image();
+    image = new Image();
 
-image.onload = () => {
-setupKeyboardEvents();
-advectColorsAndFieldLoop();
-}
+    image.onload = () => {
+        setupKeyboardEvents();
+        advectColorsAndFieldLoop();
+    }
 
-image.src = options.imageUrl;
+    image.src = options.imageUrl;
 }
 
 document.addEventListener('DOMContentLoaded', app, false);
