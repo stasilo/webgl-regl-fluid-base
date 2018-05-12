@@ -2,8 +2,8 @@ const options = require('./options');
 const defined = require('./utils').defined;
 
 const regl = defined(options.pixelRatio) && options.pixelRatio != null
-? require('regl')({pixelRatio: options.pixelRatio, container: options.container})
-: require('regl')({container: options.container});
+	? require('regl')({pixelRatio: options.pixelRatio, container: options.container})
+	: require('regl')({container: options.container});
 
 const glsl = require('glslify');
 const fpsSampler = new (require('fps-sampler'))();
