@@ -56,7 +56,3 @@ module.exports = regl => {
 
 	return drawPattern;
 }
-
-
-
-// module.exports = drawPattern;

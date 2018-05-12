@@ -33,11 +33,11 @@ module.exports = regl => {
 
 	        void main() {
 	            vec2 uv = 1. - map(position + offset,
-	                vec2(-1.), vec2(1.),
+                    vec2(-1.), vec2(1.),
 	                vec2(0.), vec2(1.)
 	            );
 
-				vec2 v = map(
+                vec2 v = map(
 	                texture2D(fieldTexture, uv).xy,
 	                vec2(0.), vec2(1.),
 	                vec2(-1.), vec2(1.)
@@ -65,11 +65,11 @@ module.exports = regl => {
 	        ].map(p => p * 0.05) // scale down
 	    },
 	    uniforms: {
-			fieldTexture: () => args.fieldTexture,
-			offset: regl.prop('offset'),
-	        color: defined(args.arrowColor)
-				? [...args.arrowColor.map(rgb => rgb === 0 ? 0 : rgb/255), 1.0]
-				: [0, 1, 0, 1]
+            fieldTexture: () => args.fieldTexture,
+            offset: regl.prop('offset'),
+            color: defined(args.arrowColor)
+                ? [...args.arrowColor.map(rgb => rgb === 0 ? 0 : rgb/255), 1.0]
+                : [0, 1, 0, 1]
 	    },
 	    depth: {
 	        enable: false
