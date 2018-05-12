@@ -9,7 +9,7 @@ module.exports = regl => {
 
 			uniform sampler2D texture;
 			uniform vec2 resolution;
-			uniform vec2 textureResolution;
+            uniform vec2 textureResolution;
 			uniform bool antialias;
 
 			varying vec2 uv;
